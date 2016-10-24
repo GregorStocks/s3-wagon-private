@@ -47,6 +47,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
@@ -200,8 +201,9 @@ public final class PrivateS3Wagon extends AbstractWagon {
             objectMetadata.setContentType(Mimetypes.getInstance().getMimetype(source));
 
             in = new TransferProgressFileInputStream(source, transferProgress);
-
-            this.amazonS3.putObject(new PutObjectRequest(this.bucketName, key, in, objectMetadata));
+            PutObjectRequest req = new PutObjectRequest(this.bucketName, key, in, objectMetadata);
+            req.setSSEAwsKeyManagmentParams(new SSEAwsKeyManagementParams());
+            this.amazonS3.putObject(req);
         } catch (AmazonServiceException e) {
             throw new TransferFailedException(String.format("Cannot write file to '%s'", destination), e);
         } catch (FileNotFoundException e) {
@@ -247,6 +249,7 @@ public final class PrivateS3Wagon extends AbstractWagon {
         if (directoryIndex != 0) {
             String directory = path.substring(0, directoryIndex);
             PutObjectRequest putObjectRequest = createDirectoryPutObjectRequest(directory);
+            putObjectRequest.setSSEAwsKeyManagmentParams(new SSEAwsKeyManagementParams());
 
             try {
                 this.amazonS3.putObject(putObjectRequest);
